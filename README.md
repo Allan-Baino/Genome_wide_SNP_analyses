@@ -3,7 +3,7 @@
 
 ## Brief overview ##
 Raw paired-end reads ~ 150 bp, were generated on an illumina NovaSeq X series system.
-Knowledge of the ddRADseq (Peterson et al., 2012), BASH and access to a high performance computing cluster preferably SLURM is recommended.
+Knowledge of ddRADseq (Peterson et al., 2012), BASH and access to a high performance computing cluster preferably SLURM is recommended.
 Knowledge of dual-indexed sample demultiplexing is recommended and is NOT covered in appended scripts.  
 
 ## Scripts' description ## 
