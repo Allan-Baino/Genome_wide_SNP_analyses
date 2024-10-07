@@ -1,5 +1,5 @@
 
-## The aim of this project is to perform Genome_wide_SNP_analyses that generate a high confidence dataset of variant loci for sequenced African giant pouched rats individuals ##
+## The aim of this project is to perform Genome_wide_SNP_analyses that generate a high confidence dataset of variants for sequenced African giant pouched rats individuals ##
 
 ## Brief overview ##
 Raw paired-end reads ~ 150 bp, were generated on an illumina NovaSeq X series system.
