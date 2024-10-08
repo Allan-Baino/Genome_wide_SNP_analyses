@@ -2,15 +2,29 @@
 **The aim of this analysis layout is to detail the prcoess of generating a high confidence dataset of variants for African giant pouched rats sequenced by the ddRAD method**
 
 **Brief overview**
-Raw paired-end reads ~ 150 bp, were generated on an illumina NovaSeq X series system. Knowledge of ddRADseq (Peterson et al., 2012), BASH and access to a high performance computing cluster preferably SLURM is recommended.
-Knowledge of dual-indexed sample demultiplexing is recommended and is NOT covered in appended scripts.
-Knowledge and use of bioinformatics software to warngle high-throughput sequencing data for population genetics is highly recommended.
+Knowledge of ddRADseq (Peterson et al., 2012), BASH and access to a high performance computing cluster preferably SLURM is recommended. Knowledge of dual-indexed sample multiplexing/demultiplexing is recommended and is NOT covered in appended scripts. 
+Knowledge and use of bioinformatics software to wrangle high-throughput sequencing data for population genetics is highly recommended. 
+
+**Data description**
+Raw paired-end reads 2X150 bp, were generated on two lanes of an illumina NovaSeq X series system. Reads were organised into 12 sample pools/directories of sequenced individuals (12 pools = 12 i7 multiplexing indices). Each pool contained a set of individuals adding up to a total of 108 individuals for all 12 pools. To assign reads to respective individuals, the program STACKS v2.68 (_process_radtags_) was used to demultiplex individuals, see ddRADseq protocol folder to familiarise with DNA sequencing library design.
 
 **Scripts' description** 
-Uploaded scripts are formatted to operate on a cluster with a Unix/Linux environment, caution is recommended when executing workflow (dependent of data structure).
-Data is organised 
+Uploaded shell scripts are formatted to operate on a cluster with a Unix/Linux environment and workflow execution is dependent on data structure. 
 
-**Script 00**: lnsfastQC.sh - this script 
+**Script 00**: lnsfastQC.sh - this script performs standard illumina sequence quality checks https://www.bioinformatics.babraham.ac.uk/projects/fastqc/ with output in the form of .html reports for sequence pools.
+
+**Scripts 01 & 02**: lcatRD12.sh & lcatRD12_2.sh - after demultiplexing, forward (read 1) and reverse (read 2) reads were arranged into individual IDs and sequencing lane i.e read 1 & read 2 for lane 3..read 1 and read 2 for lane 5.
+These scripts concatenate sequencing output from the two lanes into a single read 1 and 2 files for each unique individual ID. Script 01 was trialed for pool 1 or Idx1, script 02 was then optimized for Idx2..12 pools.
+
+**Script 03**: lgsub.sh - this 'awk' script is designed to perform substitution of /_/ with ":" separating arguments on the header section of read 1 and 2 fastq files for all individuals. This script also provides 'a basic'
+layout for threading tasks through multiple resources on a cluster (SLURM).
+
+**Script 04**: lcaMapSM.sh - this script maps forward and reverse reads to an African giant pouched rat reference genome to generate .sam files for each sequenced individual, see bwa-mem2 https://github.com/bwa-mem2/bwa-mem2 and samtools http://www.htslib.org/doc/samtools.html documentation.
+
+**Script 05**: lcaSBP.sh - this script converts .sam files to .bam files (-bh flag specified), adds unique @RG's and checks whether unique @RG's are present for every individual ID before sorting and indexing sorted .bam files. All sorted .bam files were merged to create 
+a single .bam file for all 108 individuals which was then indexed (this was done separately on the cluster and NOT included in script). 
+
+**Script 06**: lcaBAMf.sh - 
 
 
 
