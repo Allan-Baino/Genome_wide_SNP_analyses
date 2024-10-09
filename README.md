@@ -1,15 +1,15 @@
 
-**The aim of this analysis layout is to detail the prcoess of generating a high confidence dataset of variants for African giant pouched rats sequenced by the ddRAD method**
+**The aim of this analysis layout is to detail the prcoess of generating a high confidence dataset of variants for African giant pouched rats sequenced by the ddRAD method**.
 
-**Brief overview**
+**Brief overview**:
 Knowledge of ddRADseq (Peterson et al., 2012), BASH and access to a high performance computing cluster preferably SLURM is recommended. Knowledge of dual-indexed sample multiplexing/demultiplexing is recommended and is NOT covered in appended scripts. 
 Knowledge and use of bioinformatics software to wrangle high-throughput sequencing data for population genetics is highly recommended. 
 
-**Data description**
-Raw paired-end reads 2X150 bp, were generated on two lanes of an illumina NovaSeq X series system. Reads were organised into 12 sample pools/directories of sequenced individuals (12 pools = 12 i7 multiplexing indices). Each pool contained a set of individuals adding up to a total of 108 individuals for all 12 pools. To assign reads to respective individuals, the program STACKS v2.68 (_process_radtags_) was used to demultiplex individuals, see ddRADseq protocol folder to familiarise with DNA sequencing library design.
+**Data description & availability**:
+Raw paired-end reads 2X150 bp, were generated on two lanes of an illumina NovaSeq X series system. Reads were organised into 12 sample pools/directories of sequenced individuals (12 pools = 12 i7 multiplexing indices). Each pool contained a set of individuals adding up to a total of 108 individuals for all 12 pools. To assign reads to respective individuals, the program STACKS v2.68 (_process_radtags_) was used to demultiplex individuals, see ddRADseq protocol attached to familiarise with DNA sequencing library design. Data can be accessed at ...SRA.
 
-**Scripts' description** 
-Uploaded shell scripts are formatted to operate on a cluster with a Unix/Linux environment and workflow execution is dependent on data structure. 
+**Scripts' description**: 
+Uploaded shell scripts require a cluster with a Unix/Linux environment and execution of scripts is dependent on data structure. 
 
 **Script 00**: lnsfastQC.sh - this script performs standard illumina sequence quality checks https://www.bioinformatics.babraham.ac.uk/projects/fastqc/ with output in the form of .html reports for sequence pools.
 
