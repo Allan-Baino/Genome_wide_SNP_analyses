@@ -22,7 +22,8 @@ layout for threading tasks through multiple resources on a cluster (SLURM).
 **Script 04**: lcaMapSM.sh - this script maps forward and reverse reads to an African giant pouched rat reference genome to generate .sam files for each sequenced individual, see bwa-mem2 https://github.com/bwa-mem2/bwa-mem2 and samtools http://www.htslib.org/doc/samtools.html documentation.
 
 **Script 05**: lcaSBP.sh - this script converts .sam files to .bam files (-bh flag specified), adds unique @RG's and checks whether unique @RG's are present for every individual ID before sorting and indexing sorted .bam files. All sorted .bam files were merged to create 
-a single .bam file for all 108 individuals which was then indexed (this was done separately on the cluster and NOT included in script). 
+a single .bam file for all 108 individuals which was then indexed (this was done separately on the cluster and NOT included in script). It is also recommended to confirm whether merged .bam file has entire sample size (108 individuals), a simple check/count of unique @RGs 
+in the .bam file i.e. samtools | grep.  
 
 **Script 06**: lcaBAMf.sh - 
 
