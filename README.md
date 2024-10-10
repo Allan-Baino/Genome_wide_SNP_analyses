@@ -23,7 +23,7 @@ layout for threading tasks through multiple resources on a cluster (SLURM).
 
 **Script 05**: lcaSBP.sh - this script converts .sam files to .bam files (-bh flag specified), adds unique @RG's and checks whether unique @RG's are present for every individual ID before sorting and indexing sorted .bam files. All sorted .bam files were merged to create 
 a single .bam file for all 108 individuals which was then indexed (this was done separately on the cluster and NOT included in script). It is also recommended to confirm whether merged .bam file has entire sample size (108 individuals), a simple check/count of unique @RGs 
-in the .bam file i.e. samtools | grep.  
+in the .bam file i.e. samtools | grep can confirm.  
 
 **Script 06**: lcaBAMf.sh - 
 
