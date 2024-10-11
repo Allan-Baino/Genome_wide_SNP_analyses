@@ -2,8 +2,7 @@
 **The aim of this analysis layout is to detail the prcoess of generating a high confidence dataset of variants for African giant pouched rats sequenced by the ddRAD method**.
 
 **Brief overview**:
-Knowledge of ddRADseq (Peterson et al., 2012), BASH and access to a high performance computing cluster preferably SLURM is recommended. Knowledge of dual-indexed sample multiplexing/demultiplexing is recommended and is NOT covered in appended scripts. 
-Knowledge and use of bioinformatics software to wrangle high-throughput sequencing data for population genetics is highly recommended. 
+Knowledge of ddRADseq (Peterson et al., 2012), BASH and access to a high performance computing cluster is recommended. Knowledge of dual-indexed sample multiplexing/demultiplexing is recommended and is NOT covered in appended scripts. Knowledge and use of bioinformatics software to wrangle high-throughput sequencing data for population genetics is highly recommended. 
 
 **Data description & availability**:
 Raw paired-end reads 2X150 bp, were generated on two lanes of an illumina NovaSeq X series system. Reads were organised into 12 sample pools/directories of sequenced individuals (12 pools = 12 i7 multiplexing indices). Each pool contained a set of individuals adding up to a total of 108 individuals for all 12 pools. To assign reads to respective individuals, the program STACKS v2.68 was used to demultiplex individuals, see ddRADseq protocol attached to familiarise with DNA sequencing library design. Data can be accessed at ...SRA.
@@ -25,7 +24,7 @@ in the .bam file i.e. samtools | grep can confirm.
 
 **Script 06**: lcaBAMf.sh - This script is designed to filter merged .bam file (all individuals) with bamtools https://github.com/pezmaster31/bamtools & specified flags to filter out: mapQuality - reads that have mapped below a certain threshold, isPrimaryAlignment - reads that are not the primary alignment, insertSize - paired-reads mapped beyond a specified distance threshold. Reasons and stringency for specifying filters are dependent on downstream applications of the data..somewhat good practice would be to ask how much can you afford to throw away? and how will it affect your biological conclusions?
 
-**Script 07**: lcaMKDP.sh - This script is designed to locate and tag optical or PCR duplicates (technical artifacts from the PCR process) and, also technical replicates - sequencing library design (estimating discordance in genotypes called for the same sample - genotyping error).
+**Script 07**: lcaMKDP.sh - This script is designed to locate and tag optical or PCR duplicates (technical artifacts from the PCR process) and, also technical replicates - sequencing library design (estimating discordance in genotypes called for the same sample - genotyping error) using Picard tools https://broadinstitute.github.io/picard/
 
 **Script 08**: lcaMAPQ.sh - This script generates mapping statistics such as average mapping quality, coverage and many more http://qualimap.conesalab.org. One advantage of doing this would be to make an informed decision on the alignment being advanced for further study...before running script 04, DNA library validation data generated on a MiSeq system was used to generate mapping statistics for two pouched rat genomes (_C. ansorgei_ accession no. GCA_026225945.1 and _C. gambianus_ accession no. GCA_004027575.1). The alignment with better mapping statistics (_C. ansorgei_) was advanced for further investigation.     
 
