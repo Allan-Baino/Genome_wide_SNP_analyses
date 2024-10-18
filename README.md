@@ -14,7 +14,7 @@ Uploaded shell scripts require a cluster with a Unix/Linux environment and execu
 
 **Scripts 01 & 02**: lcatRD12.sh & lcatRD12_2.sh - After demultiplexing, forward (read 1) and reverse (read 2) reads were arranged into individual IDs and sequencing lane i.e read 1 & read 2 for lane 3..read 1 and read 2 for lane 5. These scripts concatenate sequencing output from the two lanes into a single read 1 and 2 files for each unique individual ID. Script 01 was trialed for pool 1 or Idx1, script 02 was then optimized for Idx2..12 pools.
 
-**Script 03**: lgsub.sh - This AWK script is designed to perform substitution of /_ / with ":" (works well with PICARD 🛠️) separating arguments on the header section of read 1 and 2 fastq files for all individuals.  
+**Script 03**: lgsub.sh - This AWK script is designed to perform substitution of /_ / with ":" (works well with PICARD 🛠️) separator arguments on the header section of read 1 and 2 fastq files for all individuals.  
 
 **Script 04**: lcaMapSM.sh - This script maps forward and reverse reads to an African giant pouched rat reference genome (accession no. GCA_026225945.1) to generate .sam files for each sequenced individual, see bwa-mem2 https://github.com/bwa-mem2/bwa-mem2 and samtools http://www.htslib.org/doc/samtools.html documentation.
 
