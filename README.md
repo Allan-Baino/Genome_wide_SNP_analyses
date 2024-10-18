@@ -10,7 +10,7 @@ Raw paired-end reads 2X150 bp, were generated on two lanes of an illumina NovaSe
 **Scripts' description**: 
 Uploaded shell scripts require a cluster with a Unix/Linux environment and execution of scripts is dependent on data structure. 
 
-**Script 00**: lcafastQC.sh - This script performs standard illumina sequence quality checks https://www.bioinformatics.babraham.ac.uk/projects/fastqc/ with output in the form of .html reports for sequenced pools (2 lanes of 12 sample pools). This script also provides a 'basic' layout for threading tasks through multiple resources on a cluster (SLURM).
+**Script 00**: lcafastQC.sh - This script performs standard illumina sequence quality checks https://www.bioinformatics.babraham.ac.uk/projects/fastqc/ with output in the form of .html reports for sequenced pools (2 lanes of 12 sample pools). This script also provides a 'basic' layout for threading tasks through multiple resources on a cluster (SLURM), take great caution when doing this. 
 
 **Scripts 01 & 02**: lcatRD12.sh & lcatRD12_2.sh - After demultiplexing, forward (read 1) and reverse (read 2) reads were arranged into individual IDs and sequencing lane i.e read 1 & read 2 for lane 3..read 1 and read 2 for lane 5. These scripts concatenate sequencing output from the two lanes into a single read 1 and 2 files for each unique individual ID. Script 01 was trialed for pool 1 or Idx1, script 02 was then optimized for Idx2..12 pools.
 
