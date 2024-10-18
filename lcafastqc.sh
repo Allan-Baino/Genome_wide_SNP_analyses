@@ -8,6 +8,7 @@
 #SBATCH --mem=100G
 #SBATCH --output=%x.out
 #SBATCH --error=%x.err
+#SBATCH --array=0-11
 
 set -e # exit on error
 
