@@ -1,0 +1,299 @@
+# filtering .vcf file
+# using vcftools we can do a simple check of loci found and individuals in the .vcf
+
+# confirm loci and indvs. 
+vcftools --vcf cans_108inds.vcf
+
+# 626,004 variant sites were detected from 108 indvs.
+
+# check the last (10) variants called in my dataset. 
+tail cans_108inds.vcf 
+
+# use grep to view the header section of the .vcf file, you should get a list of all individuals
+# among other important information.  
+grep "^#" cans_108inds.vcf
+
+# create files that may be useful for categorising SNPs by popns.
+awk '{print $1 > $2".txt"}' pop_groups
+
+# before filtering out out loci from our vcf, we need to filter out poorly supported genotype 
+# calls, we can call this 'making missing data'....as we shall change these data to missing data.
+# Poorly supported means instances where genotype calls are not supported by read depth (DP) below 
+# a set cutoff or has genotype quality scores (GQ) below desired threshold...a point to note is 
+# that filtering genotypes should be done before SNP filtering...
+
+# DP, outputs a meanDP per individual for each variant site
+vcftools --vcf cans_108inds.vcf --depth --out depth_info
+
+
+# GQ, output GQ for each individual per variant site
+vcftools --vcf cans_108inds.vcf --extract-FORMAT-info GQ --out gq_info
+
+# lets figure out max and min DP,GQ 
+# initiate R
+R
+
+depth<-read.table("depth_info.idepth", sep="\t", header = TRUE)
+str(depth)
+n_samps <- length(unique(depth[[1]]))
+depth$TOTAL_DEPTH <- depth$MEAN_DEPTH * n_samps
+str(depth)
+write.table(depth, "updated_depth_info.txt", sep="\t", row.names=FALSE)
+
+maxDP <- max(depth$TOTAL_DEPTH, na.rm=TRUE)
+> maxDP - 78.81397
+
+minDP <- min(depth$TOTAL_DEPTH, na.rm=TRUE)
+> minDP - 0.0001725224
+
+meanDP <- mean(depth$TOTAL_DEPTH, na.rm=TRUE)
+> meanDP - 12.8897
+
+lGQ<-read.table("gq_info.GQ.FORMAT", sep="\t", header = TRUE)
+str(lGQ)
+
+max_GQ <- apply(lGQ[, 3:ncol(lGQ)], 1, function(x) max(as.numeric(x), na.rm=TRUE))
+> maxGQ - 127
+
+min_GQ <- apply(lGQ[, 3:ncol(lGQ)], 1, function(x) min(as.numeric(x), na.rm=TRUE))
+> minGQ - 0
+
+# terminate session
+q()
+
+# GT filtering
+# if we want to filter for DP and GQ, we would have to include these as flags in our VCF, vcftools 
+# will not give an error when you filter for a flag that does not exist, so be sure to check..
+# the --recode option tells vcftools to filter and output a file with retained data..
+vcftools --vcf cans_108inds.vcf --minDP 10 --minGQ 20 --recode --out cans_108inds_minDP10GQ20
+
+# all variant sites were retained.
+
+# SNP filtering - here we want to remove loci that do not meet our filtering criteria, best to 
+# apply filters one at a time and keep track of loci retained, and understand stringency/leniency
+# of filters applied.
+
+# f1 - Biallelic loci - filter the .vcf to remain with loci that have 2 alleles (min 2 and max 2)
+vcftools --vcf cans_108inds_minDP10GQ20.recode.vcf --max-alleles 2 --min-alleles 2 --recode --out cans_108inds_minDP10GQ20_biallelic
+
+# variant sites dropped to 622,310.
+
+# f2 - Missing data - here we want to set a threshold on how many individuals of 108 should miss a GT call,
+# best to be stringent when sample size is small (relative to similar research or can be arbitrary), opted
+# for 99% allowed samples with missing GT calls, which means approx. 1% of 108 indvs will not have a missing GT. 
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic.recode.vcf --max-missing 0.01 --recode --out cans_108inds_minDP10GQ20_biallelic_0.99missing
+
+# variant sites dropped to 31,546.
+
+# its important to revert back to your research questions for reasoning on use of this filter..quality of data?
+# (which you really can't change now), SNP discovery? Preserve as many SNPs as possible..which is what guided my
+# reasoning..
+
+# f3 - MAF/MAC - removing less frequent alleles at variant sites i.e. remove loci where the
+# the minor allele occurs rarely in a sample and doesn't provide much info compared to other
+# loci. It could also be a seq artifact/error. Below an allele that occurs once in a single
+# heterozygotę will have a frequency of 0.46% 
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing.recode.vcf --maf 0.05 --recode --out cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%
+
+# variant sites dropped to 12,437.
+
+# f4 - Maximum mean depth - in addition to ensuring all genotypes are supported by a min n# of reads,
+# it is best to have loci that don't have too high of a depth! Loci with considerably high depth are 
+# likely to be repetitive regions of the genome or other artifacts. To identify these, we should first 
+# get a report for mean depth of each locus across all individuals.
+# meanDP per variant site averaged across all individuals 
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%.recode.vcf --site-mean-depth --out cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5% 
+
+# calculate the mean depth and SD, the maximum depth allowed should be 1 or 2 SD above the mean.
+
+# initiate R
+R
+
+ldepth<-read.table("cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%.ldepth.mean", sep="\t", header = TRUE)
+meanDP <- mean(ldepth$MEAN_DEPTH) 
+> meanDP - 0.9647743
+sdDP <- sd(ldepth$MEAN_DEPTH)
+> sdDP - 0.5540962
+
+# calculate bounds for 1 and 2 SD 
+lb_1sd <- meanDP - sdDP
+ub_1sd <- meanDP + sdDP
+lb_2sd <- meanDP - 2 * sdDP
+ub_2sd <- meanDP + 2 * sdDP
+
+# filter data to get meanDP values that are 1 and 2 sd away from the mean
+sdD_data <- ldepth[ldepth$MEAN_DEPTH >= lb_1sd & ldepth$MEAN_DEPTH <= ub_1sd, ]
+sdD_data2 <- ldepth[ldepth$MEAN_DEPTH >= lb_2sd & ldepth$MEAN_DEPTH <= ub_2sd, ]
+
+# save results for reference
+write.table(sdD_data, "updated_ldepth_info1.txt", sep="\t", row.names=FALSE)
+write.table(sdD_data2, "updated_ldepth_info2.txt", sep="\t", row.names=FALSE)
+
+# calc. min and max. DP for filtered data
+max_meanDP <- max(sdD_data$MEAN_DEPTH, na.rm=TRUE)
+> max_meanDP - 1.51852
+
+min_meanDP <- min(sdD_data$MEAN_DEPTH, na.rm=TRUE)
+> min_meanDP - 0.416667 
+
+max_meanDP2 <- max(sdD_data2$MEAN_DEPTH, na.rm=TRUE)
+> max_meanDP - 2.06481
+
+min_meanDP2 <- min(sdD_data2$MEAN_DEPTH, na.rm=TRUE)
+> min_meanDP - 0.185185 
+
+# terminate session
+q()
+
+# filter for maximum mean depth 1 SD above meanDP
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%.recode.vcf --max-meanDP 1.5 --recode --out cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP 
+
+# variant sites dropped to 10,050.
+
+# f5 - Hardy-Weinberg Equilibrium - it might make sense to test for HWE and exclude variant sites that 
+# significantly depart from expected HWE. In the absence of evolutionary influences, allele frequencies
+# in a population remain constant from generation to generation. A p-value of 0.05 will test whether 
+# each biallelic SNP deviates significantly from expected HWE and remove them (p < 0.05), leaving only 
+# SNPs that conform.  
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP.recode.vcf --hwe 0.05 --recode --out cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe
+
+# variants sites dropped to 9,508.
+
+# f5 - Linkage Disequilibrium - Estimating how much LD exists for variants in your dataset could be an important aspect
+# to look out for. SNPs that are physically close to each other on a chr are more likely to be inherited together.
+# SNPs in high LD are likely to be less independent and may lead to redundancies in downstream analyses. Always best to
+# focus more on independent markers. You can do this by generating a report on LD for SNPs in the dataset using the 
+# --hap-r2 flag, use report to establish an r2 range for pairs of variants at specific bp distances to get a reasonable 
+# --thin <value>. You can also calculate LD between pairs of variants within a certain bp distance and remove one of each 
+# pair that appears to be in high LD (Plink v1.9 is best for this)...which is what I went for.    
+
+# before using the --hap-r2 flag, use shapeit to convert data in .vcf to phased genotypes to enable vcftools to calculate
+# LD from haplotypes which is a bit involved...more on Shapeit4 see, https://odelaneau.github.io/shapeit4/ 
+shapeit4 --input data.vcf ---output data_phased.vcf
+
+# using Plink, which needs data to be specifically formatted, e.g. ref genome should be similar to how the human genome
+# appears. So we shall manually edit our .vcf to have contig_poistion as the third argument in the .vcf and use the 
+# --allow-extra-chr flag to make Plink accept numerous contigs within the pouched rat genome 
+
+# format .vcf file
+# run Plink (--indep-pairwise command) on annotated .vcf to output .prune.in (loci in approx. LD with each other) and 
+# .prune.out (loci for exclusion) files command below follows an examining window size (50kb), step size (10 SNPs) and 
+# r2 threshold (0.5)  
+plink --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe.annotated.vcf --indep-pairwise 50 5 0.5 --allow-extra-chr --out cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe    
+
+# let's modify .prune.in file to output a .txt with loci we want to keep in our dataset
+awk 'BEGIN {OFS="\t"} {gsub(/_/,"\t", $0); $2=$2}1' cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe.prune.in > good_LD_sites.txt
+  
+# let's now use the --positions flag in vcftools to retain variant sites that are below our LD (r2 < 0.5) threshold 
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe.recode.vcf --positions good_LD_sites.txt --recode --out cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned
+
+# variant sites retained 6,701.
+
+# may be worth understanding another quality metric, genotype discordance (differences in the genotype called for 
+# the  same sample). 15 technical replicates were part of the sequencing library and can be used to estimate
+# genotype discordance rates. It was done here and not before the filtering process as the differences in what we
+# observe cannot be changed. 
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C016_AP1.txt --out AP1genotypes
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C047_AP2.txt --out AP2genotypes
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C048_AR.txt --out ARgenotypes
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C012_MR1.txt --out MR1genotypes
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C019_MR2.txt --out MR2genotypes
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C023_DD.txt --out DDgenotypes
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C010_KL.txt --out KLgenotypes
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C013_IR.txt --out IRgenotypes
+
+# initiate R
+R
+AP1gen <- read.table("AP1genotypes.GT.FORMAT", header=TRUE, sep="\t")
+AP2gen <- read.table("AP2genotypes.GT.FORMAT", header=TRUE, sep="\t")
+ARgen <- read.table("ARgenotypes.GT.FORMAT", header=TRUE, sep="\t")
+MR1gen <- read.table("MR1genotypes.GT.FORMAT", header=TRUE, sep="\t")
+MR2gen <- read.table("MR2genotypes.GT.FORMAT", header=TRUE, sep="\t")
+DDgen <- read.table("DDgenotypes.GT.FORMAT", header=TRUE, sep="\t")
+KLgen <- read.table("KLgenotypes.GT.FORMAT", header=TRUE, sep="\t")
+IRgen <- read.table("IRgenotypes.GT.FORMAT", header=TRUE, sep="\t")
+
+# create function to convert genotypes (0/0, 0/1, 1/1, ./.)
+con_gen <- function(genotype) {
+  if (genotype == "0/0") return(0)  # homozygous reference
+  if (genotype == "0/1") return(1)  # heterozygous
+  if (genotype == "1/1") return(2)  # homozygous alternate
+  return(NA)  # missing data (./.)
+}
+
+# pass function into data variables of interest 
+AP1rep1 <- sapply(AP1gen$C016TR1, con_gen)
+AP1rep2 <- sapply(AP1gen$C016TR2, con_gen)
+AP2rep1 <- sapply(AP2gen$C047TR1, con_gen)
+AP2rep2 <- sapply(AP2gen$C047TR2, con_gen)
+ARrep1 <- sapply(ARgen$C048TR1, con_gen)
+ARrep2 <- sapply(ARgen$C048TR2, con_gen)
+MR1rep1 <- sapply(MR1gen$C012TR1, con_gen)
+MR1rep2 <- sapply(MR1gen$C012TR2, con_gen)
+MR2rep1 <- sapply(MR2gen$C019TR1, con_gen)
+MR2rep2 <- sapply(MR2gen$C019TR2, con_gen)
+DDrep1 <- sapply(DDgen$C023, con_gen)
+DDrep2 <- sapply(DDgen$C023TR1, con_gen)
+KLrep1 <- sapply(KLgen$C010TR1, con_gen)
+KLrep2 <- sapply(KLgen$C010TR2, con_gen)
+IRrep1 <- sapply(KLgen$C013TR1, con_gen)
+IRrep2 <- sapply(KLgen$C013TR2, con_gen)
+
+# calculate discordance
+AP1d <- ifelse(!is.na(AP1rep1) & !is.na(AP1rep2), AP1rep1 != AP1rep2, NA)
+AP2d <- ifelse(!is.na(AP2rep1) & !is.na(AP2rep2), AP2rep1 != AP2rep2, NA)
+ARd <- ifelse(!is.na(ARrep1) & !is.na(ARrep2), ARrep1 != ARrep2, NA)
+MR1d <- ifelse(!is.na(MR1rep1) & !is.na(MR1rep2), MR1rep1 != MR1rep2, NA)
+MR2d <- ifelse(!is.na(MR2rep1) & !is.na(MR2rep2), MR2rep1 != MR2rep2, NA)
+DDd <- ifelse(!is.na(DDrep1) & !is.na(DDrep2), DDrep1 != DDrep2, NA)
+KLd <- ifelse(!is.na(KLrep1) & !is.na(KLrep2), KLrep1 != KLrep2, NA)
+IRd <- ifelse(!is.na(IRrep1) & !is.na(IRrep2), IRrep1 != IRrep2, NA)
+
+# calculate discordant rates
+AP1c <- sum(!is.na(AP1d) & AP1d == T)
+AP1tc <- sum(!is.na(AP1d))
+APr <- (AP1c/AP1tc) * 100
+33.33%
+
+AP2c <- sum(!is.na(AP2d) & AP2d == T)
+AP2tc <- sum(!is.na(AP2d))
+AP2r <- (AP2c/AP2tc) * 100
+0%
+
+ARc <- sum(!is.na(ARd) & ARd == T)
+ARtc <- sum(!is.na(ARd))
+ARr <- (ARc/ARtc) * 100
+18.28571%
+
+MR1c <- sum(!is.na(MR1d) & MR1d == T)
+MR1tc <- sum(!is.na(MR1d))
+MR1r <- (MR1c/MR1tc) * 100
+NaN                       
+
+MR2c <- sum(!is.na(MR2d) & MR2d == T)
+MR2tc <- sum(!is.na(MR2d))
+MR2r <- (MR2c/MR2tc) * 100
+NaN
+
+DDc <- sum(!is.na(DDd) & DDd == T)
+DDtc <- sum(!is.na(DDd))
+DDr <- (DDc/DDtc) * 100
+NaN
+
+KLc <- sum(!is.na(KLd) & KLd == T)
+KLtc <- sum(!is.na(KLd))
+KLr <- (KLc/KLtc) * 100
+0%
+
+IRc <- sum(!is.na(IRd) & IRd == T)
+IRtc <- sum(!is.na(IRd))
+IRr <- (IRc/IRtc) * 100
+NaN
+
+# for comparisons with NaN outcomes, if a called GT in a pair has 0/0, 0/1, 1/1 and the matching observation 
+# is a ./. that comparison will automatically become an NA because of the function 'con_gen' above.   
+
+# we can now remove our technical replicates from the data set. 
+vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned.recode.vcf --remove rm_samples.txt --recode --out cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned_TRrm
+
+# total variant sites retained 6,701, in 93 individuals.
