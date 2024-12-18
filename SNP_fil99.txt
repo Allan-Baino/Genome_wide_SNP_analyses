@@ -297,3 +297,16 @@ NaN
 vcftools --vcf cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned.recode.vcf --remove rm_samples.txt --recode --out cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned_TRrm
 
 # total variant sites retained 6,701, in 93 individuals.
+
+# awk script to annotate sampling location to .vcf (match sample to locality)
+awk 'BEGIN { while (getline < "pop_map.txt") { pop[$1] = $2 } }
+     /^##/ { print }
+     /^#CHROM/ {
+         for (i=10; i<=NF; i++) {
+             if ($i in pop) {
+                 print "##SAMPLE=<ID=" $i ",Description=\"Locality: " pop[$i] "\">"
+             }
+         }
+     }
+     !/^##/ { print }
+' cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned_TRrm.recode.vcf > cans_108inds_minDP10GQ20_biallelic_0.99missing_maf5%_maxDP_hwe_LDpruned_TRrm.recode.an.vcf
