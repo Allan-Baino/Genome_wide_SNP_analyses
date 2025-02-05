@@ -1,0 +1,19 @@
+# transforming final .vcf to .str file format
+
+# Option 1 (recommended)
+# first activate PGDSpider GUI to make a VCF_to_STR.spid file which will be created in your WD (this is assuming PGDSpider is on your system)
+# activate openjdk env
+conda activate openjdk 
+
+# activate pgdspider GUI
+java -Xmx1024m -Xms512m -jar PGDSpider3.jar
+
+# PGDSpider GUI - convert option which I found works well however, a bit of involved. make sure sure files to be converted .vcf are in your source directory, 
+# follow prompts and everything should work. after you can then add population mapping information to the .str with an awk script (which is what I did).
+# see script popSTR.sh 
+
+# Option 2 (NOT recommended)
+# convert .vcf to .str on cli
+java -Xmx1024m -jar ./PGDSpider3-cli.jar -inputfile cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned_TRrm.recode.vcf -inputformat VCF -outputfile pr_SNPs80.str -outputformat STR -spid VCF_to_STR.spid
+
+# you may run into issues with with accessing data files in multiple locations for this to work...however, it could work for you.
