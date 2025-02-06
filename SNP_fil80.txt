@@ -6,7 +6,7 @@
 # confirm loci and indvs. 
 vcftools --vcf cans_108inds.vcf
 
-# 626,004 variant sites were called from 108 indvs.
+# 626,004 variant sites sample size 108 indvs. (15 TRs)
 
 # use grep to view the header section of the .vcf file, you should get a list of all individuals
 # among other important information.  
@@ -57,8 +57,8 @@ less missing_data_site.lmiss
 # such as biallelic, hwe, LD.
 
  
-# output a meanDP, report produced here has the average depth across all individuals for each variant
-# and NOT total depth.
+# output a meanDP, report produced here has the average depth per individual for each variant
+# site and NOT total depth.
 vcftools --vcf cans_108inds_Pop.vcf --depth --out depth_info
 
 # output GQ for each individual per variant site
@@ -102,21 +102,22 @@ q()
 # of --minDP because --depth gave use meanDP and NOT total depth.    
 vcftools --vcf cans_108inds_Pop.vcf --min-meanDP 0.06 --minGQ 5 --recode --out cans_108inds_Pop_minDP6GQ5
 
-# variant sites dropped to 232,964.
+# variant sites retained to 232,964.
 
+# Let's now apply select informativeness filters
 
-# Missing data - here we want to set a threshold on how many individuals of 108 should miss a GT call
+# f1 - Missing data - here we want to set a threshold on how many individuals of 108 should miss a GT call
 # best to be stringent when sample size is small however, in this instance that would be very harsh and will 
 # lead to massive loss of sites. opted for a 0.20 threshold which meant variants with more than 20% missing
 # GTs will be removed.
 vcftools --vcf cans_108inds_Pop_minDP6GQ5.recode.vcf --max-missing 0.20 --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing
 
-# variant sites dropped to 13,766.
+# variant sites retained to 13,766.
 
 # a threshold of --max-missing 0.25 would retain 3,769 sites, considering other filtering steps to come
 # --max-missing 0.20 was an acceptable threshold.
 
-# Maximum mean depth - sites with considerably high depth are likely to be repetitive regions
+# f2 - Maximum mean depth - sites with considerably high depth are likely to be repetitive regions
 # of the genome or other artifacts. to identify these, we can first get a report for mean depth of
 # each site across all individuals. 
 vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing.recode.vcf --site-mean-depth --out cans_108inds_Pop_minDP6GQ5_0.80missing 
@@ -161,27 +162,26 @@ min_meanDP2 <- min(sdD_data2$MEAN_DEPTH, na.rm=TRUE)
 
 # terminate session
 q()
+ 
+# a threshold of 2 SD above the meanDP (--site-mean-depth) was chosen 
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing.recode.vcf --max-meanDP 2.2037 --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP
 
-# an acceptable threshold for --max-meanDP is either 1 or 2 SD above the mean however, depth was not 
-# considerably differently between 1 and 2 SD above mean, so maximum mean depth was NOT applied as a
-# filter.
+# variant sites retained 12,969
 
-# Let's now apply select filters
+# f3 - Biallelic loci - filter the .vcf to remain with loci that have 2 alleles (min 2 and max 2)
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP.recode.vcf --max-alleles 2 --min-alleles 2 --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic
 
-# f1 - Biallelic loci - filter the .vcf to remain with loci that have 2 alleles (min 2 and max 2)
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing.recode.vcf --max-alleles 2 --min-alleles 2 --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic
+# variant sites retained to 12,821.
 
-# variant sites dropped to 13,586.
-
-# f2 - MAF/MAC - removing less frequent alleles at variant sites i.e. remove loci where the
+# f4 - MAF/MAC - removing less frequent alleles at variant sites i.e. remove loci where the
 # the minor allele occurs rarely in a sample because it doesn't provide much info compared to
 # other loci. it could also be a seq artifact/error. below an allele that occurs once in a single
 # heterozygotę will have a frequency of 0.46% 
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic.recode.vcf --maf 0.05 --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic.recode.vcf --maf 0.05 --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%
 
-# variant sites dropped to 5,969.
+# variant sites retained to 5,594.
 
-# f3 - Linkage Disequilibrium - estimating how much LD exists for variants in your dataset could be an important aspect
+# f5 - Linkage Disequilibrium - estimating how much LD exists for variants in your dataset could be an important aspect
 # to look out for. SNPs that are physically close to each other on a chr are more likely to be inherited together.
 # SNPs in high LD are likely to be less independent and may lead to redundancies in downstream analyses. Always best to
 # focus more on independent markers. You can do this by generating a report on LD for SNPs in the dataset using the 
@@ -198,30 +198,33 @@ shapeit4 --input data.vcf ---output data_phased.vcf
 # --allow-extra-chr flag to make Plink accept numerous contigs within the pouched rat genome 
 
 # format .vcf file
-awk 'BEGIN{OFS="\t"} !/#/ {sub(/\./, $1"_"$2, $3)}1' cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%.recode.vcf > cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_annotated.vcf 
+awk 'BEGIN{OFS="\t"} !/#/ {sub(/\./, $1"_"$2, $3)}1' cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%.recode.vcf > cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_annotated.vcf 
 
 # run Plink (--indep-pairwise command) on annotated .vcf to output .prune.in (loci in approx. LD with each other) and 
 # .prune.out (loci for exclusion) files command below follows an examining window size (50kb), step size (10 SNPs) and 
 # r^2 threshold (0.8)  
-plink --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_annotated.vcf --indep-pairwise 50 5 0.8 --allow-extra-chr --out cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%    
+plink --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_annotated.vcf --indep-pairwise 50 5 0.8 --allow-extra-chr --out cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%    
 
 # let's modify .prune.in file to output a .txt with loci we want to keep in our dataset
-awk 'BEGIN {OFS="\t"} {gsub(/_/,"\t", $0); $2=$2}1' cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%.prune.in > good_LD_sites.txt
+awk 'BEGIN {OFS="\t"} {gsub(/_/,"\t", $0); $2=$2}1' cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%.prune.in > good_LD_sites.txt
   
 # let's now use the --positions flag in vcftools to retain variant sites that are below our LD (r^2 < 0.8) threshold 
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%.recode.vcf --positions good_LD_sites.txt --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%.recode.vcf --positions good_LD_sites.txt --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned
 
-# variant sites retained 2,159.
+# variant sites retained 1,988.
 
-# may be worth understanding another quality metric, genotype discordance (differences in the genotype called for the  same sample). 15 technical replicates were part of the sequencing library and # can be used to estimate genotype discordance rates. It was done here and not before the filtering process as the differences in what we observe cannot be changed. 
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C016_AP1.txt --out AP1genotypes
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C047_AP2.txt --out AP2genotypes
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C048_AR.txt --out ARgenotypes
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C012_MR1.txt --out MR1genotypes
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C019_MR2.txt --out MR2genotypes
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C023_DD.txt --out DDgenotypes
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C010_KL.txt --out KLgenotypes
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C013_IR.txt --out IRgenotypes
+# may be worth understanding another quality metric, genotype discordance (differences in the genotype called for 
+# the  same sample). 15 technical replicates were part of the sequencing library and can be used to estimate
+# genotype discordance rates. It was done here and not before the filtering process as the differences in what we
+# observe cannot be changed. 
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C016_AP1.txt --out AP1genotypes
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C047_AP2.txt --out AP2genotypes
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C048_AR.txt --out ARgenotypes
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C012_MR1.txt --out MR1genotypes
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C019_MR2.txt --out MR2genotypes
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C023_DD.txt --out DDgenotypes
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C010_KL.txt --out KLgenotypes
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned.recode.vcf --extract-FORMAT-info GT --keep C013_IR.txt --out IRgenotypes
 
 # initiate R
 R
@@ -315,31 +318,36 @@ NaN
 # is a ./. that comparison will automatically become an NA because of the "con_gen" function above.   
 
 # we can now remove our technical replicates from the data set. 
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned.recode.vcf --remove rm_samples.txt --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned_TRrm
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned.recode.vcf --remove rm_samples.txt --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm
 
-# total variant sites retained 2,159 in 93 individuals.
+# total variant sites retained 1,988 in 93 individuals.
 
 # generate some reports
 # R1 - Heterozygosity (Fis/Gis,He) by site for each indvs. per popn
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popAP.txt --out popAp_heterozygosity
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popAR.txt --out popAR_heterozygosity
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popKL.txt --out popKL_heterozygosity
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popMR.txt --out popMR_heterozygosity
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popIR.txt --out popIR_heterozygosity
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popDD.txt --out popDD_heterozygosity
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popAP.txt --out popAP_heterozygosity
+
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popAR.txt --out popAR_heterozygosity
+
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popKL.txt --out popKL_heterozygosity
+
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popMR.txt --out popMR_heterozygosity
+
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popIR.txt --out popIR_heterozygosity
+
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --het --keep popDD.txt --out popDD_heterozygosity
 
 # R2 - HWE (test how many observed genotypes have significantly departed from what would be expected under neutral evolution)
 # --hardy (Wigginton, Cutler and Abecasis 2005) 
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned_TRrm.recode.vcf --hardy --out pr93
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --hardy --out pr93
 
 # by chance we would expect at least 5% (p < 0.05) of genotypes called to deviate from HWE (~ 108 SNPs for this data).
 # this can also be considered as justification for NOT applying --hwe as an informativeness filter. 
- 
+
 # R3 - Relatedness (calculate relatedness for indvs. in data, Yang et al., 2010, unadjusted AJK statistic - doesn't account for
 # factors like inbreeding depression). Ajk statistic quantifies the expected proportion of alleles at a locus due to shared 
 # ancestry. 
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_biallelic_maf5%_LDpruned_TRrm.recode.vcf --relatedness --keep pop_ID.txt --out pr93
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --relatedness --keep pop_ID.txt --out pr93
  
-# other reports such as Fst and many more can be computed in R with package Adegenet!
+# other reports such Fst can be computed in R with package Adegenet!
 
 # final .vcf file was transformed into .str before entry into R for pop gen analyses, see cnPGD.txt. 
