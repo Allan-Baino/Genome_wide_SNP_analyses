@@ -163,8 +163,8 @@ min_meanDP2 <- min(sdD_data2$MEAN_DEPTH, na.rm=TRUE)
 q()
 
 # an acceptable threshold for --max-meanDP is either 1 or 2 SD above the mean however, depth was not 
-# considerably high a --min-meanDP of 0.06 was already set above, so maximum mean depth was not applied
-# as a filter.
+# considerably differently between 1 and 2 SD above mean, so maximum mean depth was NOT applied as a
+# filter.
 
 # Let's now apply select filters
 
