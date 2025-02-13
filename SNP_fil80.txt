@@ -201,9 +201,9 @@ shapeit4 --input data.vcf ---output data_phased.vcf
 awk 'BEGIN{OFS="\t"} !/#/ {sub(/\./, $1"_"$2, $3)}1' cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%.recode.vcf > cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_annotated.vcf 
 
 # run Plink (--indep-pairwise command) on annotated .vcf to output .prune.in (loci in approx. LD with each other) and 
-# .prune.out (loci for exclusion) files command below follows an examining window size (50kb), step size (10 SNPs) and 
+# .prune.out (loci for exclusion) files command below follows an examining window size (10kb), step size (5 SNPs) and 
 # r^2 threshold (0.8)  
-plink --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_annotated.vcf --indep-pairwise 50 5 0.8 --allow-extra-chr --out cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%    
+plink --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_annotated.vcf --indep-pairwise 10 5 0.8 --allow-extra-chr --out cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%    
 
 # let's modify .prune.in file to output a .txt with loci we want to keep in our dataset
 awk 'BEGIN {OFS="\t"} {gsub(/_/,"\t", $0); $2=$2}1' cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%.prune.in > good_LD_sites.txt
@@ -211,7 +211,7 @@ awk 'BEGIN {OFS="\t"} {gsub(/_/,"\t", $0); $2=$2}1' cans_108inds_Pop_minDP6GQ5_0
 # let's now use the --positions flag in vcftools to retain variant sites that are below our LD (r^2 < 0.8) threshold 
 vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%.recode.vcf --positions good_LD_sites.txt --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned
 
-# variant sites retained 1,988.
+# variant sites retained 2,762.
 
 # may be worth understanding another quality metric, genotype discordance (differences in the genotype called for 
 # the  same sample). 15 technical replicates were part of the sequencing library and can be used to estimate
@@ -320,7 +320,7 @@ NaN
 # we can now remove our technical replicates from the data set. 
 vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned.recode.vcf --remove rm_samples.txt --recode --out cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm
 
-# total variant sites retained 1,988 in 93 individuals.
+# total variant sites retained 2,762 in 93 individuals.
 
 # generate some reports
 # R1 - Heterozygosity (Fis/Gis,He) by site for each indvs. per popn
@@ -340,7 +340,7 @@ vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_
 # --hardy (Wigginton, Cutler and Abecasis 2005) 
 vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --hardy --out pr93
 
-# by chance we would expect at least 5% (p < 0.05) of genotypes called to deviate from HWE (~ 108 SNPs for this data).
+# by chance we would expect at least 5% (p < 0.05) of genotypes called to deviate from HWE (~ 138 SNPs for this data).
 # this can also be considered as justification for NOT applying --hwe as an informativeness filter. 
 
 # R3 - Relatedness (calculate relatedness for indvs. in data, Yang et al., 2010, unadjusted AJK statistic - doesn't account for
