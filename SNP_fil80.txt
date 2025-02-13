@@ -338,7 +338,7 @@ vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_
 
 # R2 - HWE (test how many observed genotypes have significantly departed from what would be expected under neutral evolution)
 # --hardy (Wigginton, Cutler and Abecasis 2005) 
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --hardy --out pr93
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --hardy --out pr93H
 
 # by chance we would expect at least 5% (p < 0.05) of genotypes called to deviate from HWE (~ 138 SNPs for this data).
 # this can also be considered as justification for NOT applying --hwe as an informativeness filter. 
@@ -346,7 +346,7 @@ vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_
 # R3 - Relatedness (calculate relatedness for indvs. in data, Yang et al., 2010, unadjusted AJK statistic - doesn't account for
 # factors like inbreeding depression). Ajk statistic quantifies the expected proportion of alleles at a locus due to shared 
 # ancestry. 
-vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --relatedness --keep pop_ID.txt --out pr93
+vcftools --vcf cans_108inds_Pop_minDP6GQ5_0.80missing_maxmeanDP_biallelic_maf5%_LDpruned_TRrm.recode.vcf --relatedness --keep pop_ID.txt --out pr93R
  
 # other reports such Fst can be computed in R with package Adegenet!
 
