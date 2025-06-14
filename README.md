@@ -5,10 +5,10 @@
 Knowledge of ddRADseq (Peterson et al., 2012), BASH and access to a high performance computing cluster is recommended. Knowledge of dual-indexed sample multiplexing/demultiplexing is recommended and is NOT covered in appended scripts. Knowledge and use of bioinformatics software to wrangle high-throughput sequencing data for population genetics is highly recommended. 
 
 **Data description & availability**:
-Raw paired-end reads 2X150 bp, were generated on two lanes of an illumina NovaSeq X series system. Reads were organised into 12 sample pools/directories of sequenced individuals (12 pools = 12 i7 multiplexing indices). Each pool contained a set of individuals adding up to a total of 108 individuals for all 12 pools. To assign reads to respective individuals, the program STACKS v2.68 was used to demultiplex individuals, see ddRADseq protocol attached to familiarise with ddRAD DNA sequencing library design. Data (.bam files for each sample) can be accessed at ...SRA.
+Raw paired-end reads 2X150 bp, were generated on two lanes of an illumina NovaSeq X series system. Reads were organised into 12 sample pools/directories of sequenced individuals (12 pools = 12 i7 multiplexing indices). Each pool contained a set of individuals adding up to a total of 108 individuals for all 12 pools. To assign reads to respective individuals, the program STACKS v2.68 was used to demultiplex individuals, see ddRADseq protocol attached to familiarise with ddRAD DNA sequencing library design. Data (.bam files for each sample) can be accessed at ...SRA. Data to run R script is available on request.
 
 **Scripts' description**: 
-Uploaded shell scripts require a cluster with a Unix/Linux environment and execution of scripts is dependent on data structure. 
+Uploaded shell scripts require a cluster with a Unix/Linux environment and execution of scripts is dependent on data structure. R script can work on any computer with R studio installed. 
 
 **Script 00**: lcafastQC.sh - This script performs standard illumina sequence quality checks https://www.bioinformatics.babraham.ac.uk/projects/fastqc/ with output in the form of .html reports for sequenced pools (2 lanes of 12 sample pools). This script also provides a 'basic' layout for threading tasks through multiple resources on a cluster with a workload manager (SLURM), take caution when doing this. 
 
