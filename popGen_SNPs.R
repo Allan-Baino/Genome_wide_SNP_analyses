@@ -10,7 +10,7 @@
 #'from Tanzania. Samples were subjected to genomic DNA extraction and prepared 
 #'for paired-end sequencing - ddRAD on a NovaSeq X series system. Reads were
 #'aligned to a pouched rat ref. 🧬 (GCA_026225945.1) to call and catalog variant
-#'sites (SNPs). SNPs were then converted file formats compatible with R to perform
+#'sites (SNPs). SNPs were then converted to file formats compatible with R to perform
 #'pop gen analyses. 
 #'---
 #' 
@@ -469,4 +469,6 @@ Fst_pops <- pairwise.WCfst(pr80.hfstat)
 #'save output
 write.csv(Fst_pops, "Fst_pops.csv", row.names = T)
 #'output stored.
+
+############################### END ##########################################
 
