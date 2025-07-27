@@ -31,4 +31,7 @@ a single .bam file for all 108 individuals which was then indexed (this was done
 
 **Script 10** popGen_SNPs.R - This R script details select population genetics analyses performed to answer the objectives my research. Examples of questions, i was interested in answering include; the number of distinct genetic units/popns within my sample size? how much genetic relatedness exists at the popn and indv. level? how genetically diverse were popns? how much genetic differentiation is there among popns? and within the captive popn? i was also interested in profiling the genotpes present among two sets of indvs. grouped by olfactory performance in the captive popn. Data to run this script is available on request.
 
+Please cite or acknowledge where my work has been helpful.
+
 **END**
+
